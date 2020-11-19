@@ -36,25 +36,27 @@ train_labels = []
 
 count = 0
 
-for filename in getSortedFilenames()[:30]:
+for filename in getSortedFilenames()[:100]:
     try:
         count += 1
+        print('-----------------------------')
         print(count, filename)
         image = cv2.imread(getModifiedImagePath(filename))
         coordinatesDictList = getCoordinatesDictList(filename)
         ss.setBaseImage(image)
         ss.switchToSelectiveSearchFast()
         ssresults = ss.process()
-        imout = image.copy()
-        counter = 0
-        falsecounter = 0
-        flag = 0
-        fflag = 0
-        bflag = 0
-        ious = []
-        for e,result in enumerate(ssresults):
-            if e < 2000 and flag == 0:
-                for gtval in coordinatesDictList:
+        for gtval in coordinatesDictList:
+            print('Looping through coordinate', gtval)
+            imout = image.copy()
+            counter = 0
+            falsecounter = 0
+            flag = 0
+            fflag = 0
+            bflag = 0
+            ious = []
+            for e,result in enumerate(ssresults):
+                if e < 2000 and flag == 0:
                     x,y,w,h = result
                     # print(gtval,x,x+w,y,y+h,"satya", w, h)
                     iou = get_iou(gtval,{"x1":x,"x2":x+w,"y1":y,"y2":y+h})
@@ -78,10 +80,10 @@ for filename in getSortedFilenames()[:30]:
                             falsecounter += 1
                     else :
                         bflag = 1
-                if fflag == 1 and bflag == 1:
-                    print("inside")
-                    flag = 1
-        print('Max IOU:', max(ious))
+                    if fflag == 1 and bflag == 1:
+                        print("inside")
+                        flag = 1
+            print('Max IOU:', max(ious))
 
     except Exception as e:
         print("Error occured in ", filename, ':', e)
@@ -182,7 +184,7 @@ if out[0][0] > out[0][1]:
 else:
     print("Formula region not found")
 
-for filename in getSortedFilenames()[-4:]:
+for filename in getSortedFilenames()[-6:]:
 
     print('---------------------------------------------')
     print('Predicting file:', filename)
@@ -193,15 +195,15 @@ for filename in getSortedFilenames()[-4:]:
     ssresults = ss.process()
     imout = img.copy()
     for e, result in enumerate(ssresults):
+        print(filename, e)
         if e < 2000:
             x,y,w,h = result
             timage = imout[y:y+h,x:x+w]
             resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
             img = np.expand_dims(resized, axis=0)
             out = model_final.predict(img)
-            print(out)
             if out[0][0] > 0.3:
-                print('Obtained rectangular area')
+                print('Obtained rectangular area:', out[0][0])
                 cv2.rectangle(imout, (x, y), (x+w, y+h), (0, 255, 0), 1, cv2.LINE_AA)
     plt.clf()
     plt.figure()
