@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from program import getCoordinatesDictList, getSortedFilenames, getModifiedImagePath, getModifiedAnnotationsPath
+import random
 
 def get_iou(bb1, bb2):
     assert bb1['x1'] < bb1['x2']
@@ -58,31 +59,35 @@ for filename in getSortedFilenames()[:30]:
         counter = 0
         falsecounter = 0
         ious = []
+
+        random.shuffle(ssresults)
         for e,result in enumerate(ssresults):
             if e < 2000:
-                isLabeledRegion = False
+                isLabeledRegion = None
                 x, y, w, h = result
                 for gtval in coordinatesDictList:
                     iou = get_iou(gtval,{ "x1": x,"x2": x + w, "y1": y,"y2": y + h })
                     ious.append(iou)
-                    if iou > 0.3:
+                    if iou > 0.25:
                         print(iou)
                         isLabeledRegion = True
+                    elif iou < 0.05:
+                        isLabeledRegion = False
 
-                if isLabeledRegion:
-                    print({ 'x1': x, 'x2': x + w, 'y1': y, 'y2': y + h  }, 'is labelled!')
-                    timage = imout[y:y+h,x:x+w]
-                    resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
-                    train_images.append(resized)
-                    train_labels.append(1)
-                    counter += 1
-
-                if (not isLabeledRegion):
+                if isLabeledRegion != None:
+                    if isLabeledRegion == True:
+                        print({ 'x1': x, 'x2': x + w, 'y1': y, 'y2': y + h  }, 'is labelled!')
                         timage = imout[y:y+h,x:x+w]
                         resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
                         train_images.append(resized)
-                        train_labels.append(0)
-                        falsecounter += 1
+                        train_labels.append(1)
+                        counter += 1
+                    elif isLabeledRegion == False and falsecounter < 20:
+                            timage = imout[y:y+h,x:x+w]
+                            resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
+                            train_images.append(resized)
+                            train_labels.append(0)
+                            falsecounter += 1
 
         print('Max IOU:', max(ious))
 
@@ -185,7 +190,9 @@ if out[0][0] > out[0][1]:
 else:
     print("Formula region not found")
 
-for filename in getSortedFilenames()[-4:]:
+testFilenames = getSortedFilenames()[200:]
+random.sample(testFilenames, 5)
+for filename in testFilenames:
 
     print('---------------------------------------------')
     print('Predicting file:', filename)
