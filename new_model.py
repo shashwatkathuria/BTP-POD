@@ -54,44 +54,47 @@ for filename in getSortedFilenames()[:30]:
             train_images.append(resized)
             train_labels.append(1)
 
-        for gtval in coordinatesDictList:
-            print('Looping through coordinate', gtval)
-            imout = image.copy()
-            counter = 0
-            falsecounter = 0
-            flag = 0
-            fflag = 0
-            bflag = 0
-            ious = []
-            for e,result in enumerate(ssresults):
-                if e < 2000 and flag == 0:
+        print('Looping through coordinate', gtval)
+        imout = image.copy()
+        counter = 0
+        falsecounter = 0
+        flag = 0
+        fflag = 0
+        bflag = 0
+        ious = []
+        for e,result in enumerate(ssresults):
+            if e < 2000 and flag == 0:
+                isLabeledRegion = False
+                for gtval in coordinatesDictList:
                     x,y,w,h = result
-                    # print(gtval,x,x+w,y,y+h,"satya", w, h)
                     iou = get_iou(gtval,{"x1":x,"x2":x+w,"y1":y,"y2":y+h})
                     ious.append(iou)
-                    if counter < 30:
-                        if iou > 0.45:
-                            print(iou)
-                            timage = imout[y:y+h,x:x+w]
-                            resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
-                            train_images.append(resized)
-                            train_labels.append(1)
-                            counter += 1
-                    else:
-                        fflag =1
-                    if falsecounter < 30:
-                        if iou < 0.2:
-                            timage = imout[y:y+h,x:x+w]
-                            resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
-                            train_images.append(resized)
-                            train_labels.append(0)
-                            falsecounter += 1
-                    else :
-                        bflag = 1
-                    if fflag == 1 and bflag == 1:
-                        print("inside")
-                        flag = 1
-            print('Max IOU:', max(ious))
+                    if iou > 0.45:
+                        print(iou)
+                        isLabeledRegion = True
+
+                if counter < 30 && isLabeledRegion:
+                    timage = imout[y:y+h,x:x+w]
+                    resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
+                    train_images.append(resized)
+                    train_labels.append(1)
+                    counter += 1
+                else:
+                    fflag =1
+
+                if falsecounter < 30 and (not isLabeledRegion):
+                        timage = imout[y:y+h,x:x+w]
+                        resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
+                        train_images.append(resized)
+                        train_labels.append(0)
+                        falsecounter += 1
+                else :
+                    bflag = 1
+
+                if fflag == 1 and bflag == 1:
+                    print("Loop limit reached")
+                    flag = 1
+        print('Max IOU:', max(ious))
 
     except Exception as e:
         print("Error occured in ", filename, ':', e)
