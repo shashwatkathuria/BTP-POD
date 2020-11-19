@@ -54,46 +54,36 @@ for filename in getSortedFilenames()[:30]:
             train_images.append(resized)
             train_labels.append(1)
 
-        print('Looping through coordinate', gtval)
         imout = image.copy()
         counter = 0
         falsecounter = 0
-        flag = 0
-        fflag = 0
-        bflag = 0
         ious = []
         for e,result in enumerate(ssresults):
-            if e < 2000 and flag == 0:
+            if e < 2000:
                 isLabeledRegion = False
+                x, y, w, h = result
                 for gtval in coordinatesDictList:
-                    x,y,w,h = result
-                    iou = get_iou(gtval,{"x1":x,"x2":x+w,"y1":y,"y2":y+h})
+                    iou = get_iou(gtval,{ "x1": x,"x2": x + w, "y1": y,"y2": y + h })
                     ious.append(iou)
-                    if iou > 0.45:
+                    if iou > 0.3:
                         print(iou)
                         isLabeledRegion = True
 
-                if counter < 30 && isLabeledRegion:
+                if isLabeledRegion:
+                    print({ 'x1': x, 'x2': x + w, 'y1': y, 'y2': y + h  }, 'is labelled!')
                     timage = imout[y:y+h,x:x+w]
                     resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
                     train_images.append(resized)
                     train_labels.append(1)
                     counter += 1
-                else:
-                    fflag =1
 
-                if falsecounter < 30 and (not isLabeledRegion):
+                if (not isLabeledRegion):
                         timage = imout[y:y+h,x:x+w]
                         resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
                         train_images.append(resized)
                         train_labels.append(0)
                         falsecounter += 1
-                else :
-                    bflag = 1
 
-                if fflag == 1 and bflag == 1:
-                    print("Loop limit reached")
-                    flag = 1
         print('Max IOU:', max(ious))
 
     except Exception as e:
@@ -195,7 +185,7 @@ if out[0][0] > out[0][1]:
 else:
     print("Formula region not found")
 
-for filename in getSortedFilenames()[-6:]:
+for filename in getSortedFilenames()[-4:]:
 
     print('---------------------------------------------')
     print('Predicting file:', filename)
@@ -206,14 +196,14 @@ for filename in getSortedFilenames()[-6:]:
     ssresults = ss.process()
     imout = img.copy()
     for e, result in enumerate(ssresults):
-        print(filename, e)
         if e < 2000:
             x,y,w,h = result
             timage = imout[y:y+h,x:x+w]
             resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
             img = np.expand_dims(resized, axis=0)
             out = model_final.predict(img)
-            if out[0][0] > 0.4:
+            print(filename, e, out[0][0])
+            if out[0][0] > 0.3:
                 print('Obtained rectangular area:', out[0][0])
                 cv2.rectangle(imout, (x, y), (x+w, y+h), (0, 255, 0), 1, cv2.LINE_AA)
     plt.clf()
