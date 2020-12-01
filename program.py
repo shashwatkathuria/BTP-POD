@@ -62,13 +62,13 @@ def parseCoordinates(path, filename):
     return coordinatesDictList
 
 def getSortedFilenames():
-    return [ filename.strip('.txt') for filename in sorted(list(os.listdir('Annotations_Modified/')))]
+    return [ filename.strip('.txt') for filename in sorted(list(os.listdir('Final_Formula_Annotations_Output/')))]
 
 def getCoordinatesDictList(filename):
     coordinatesDictList = []
 
     # Order => X1, Y1, X2, Y2
-    file = open('Annotations_Modified/' + filename + '.txt')
+    file = open('Final_Formula_Annotations_Output/' + filename + '.txt')
     rectangularCoordinatesList = [coordinates.strip('\n').split(' ') for coordinates in file.readlines()]
 
     for coordinates in rectangularCoordinatesList:
@@ -79,10 +79,12 @@ def getCoordinatesDictList(filename):
 
 
 def getModifiedImagePath(filename):
-    return 'Images_Modified/' + filename + '.png'
+    print(filename)
+    return 'Final_Images_Output/' + filename + '.png'
 
 def getModifiedAnnotationsPath(filename):
-    return 'Annotations_Modified/' + filename + '.txt'
+    print(filename)
+    return 'Final_Formula_Annotations_Output/' + filename + '.txt'
 
 if __name__ == '__main__':
     main()

@@ -185,7 +185,7 @@ if out[0][0] > out[0][1]:
 else:
     print("Formula region not found")
 
-testFilenames = getSortedFilenames()[600:]
+testFilenames = getSortedFilenames()
 testFilenames = random.sample(testFilenames, 10)
 
 for filename in testFilenames:
