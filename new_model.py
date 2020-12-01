@@ -36,7 +36,7 @@ train_images = []
 train_labels = []
 
 count = 0
-for filename in getSortedFilenames()[:300]:
+for filename in getSortedFilenames()[:200]:
     try:
         count += 1
         print('-----------------------------')
@@ -50,9 +50,10 @@ for filename in getSortedFilenames()[:300]:
             print('Looping through coordinate', gtval)
             imout = image.copy()
             timage = imout[gtval['y1']: gtval['y2'], gtval['x1'] : gtval['x2']]
-            resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
-            train_images.append(resized)
-            train_labels.append(1)
+            if timage.shape[0] != 0 and timage.shape[1] != 0:
+                resized = cv2.resize(timage, (224,224), interpolation = cv2.INTER_AREA)
+                train_images.append(resized)
+                train_labels.append(1)
 
         imout = image.copy()
         counter = 0
@@ -159,7 +160,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 checkpoint = ModelCheckpoint("ieeercnn_vgg16_1.h5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
 early = EarlyStopping(monitor='val_loss', min_delta=0, patience=100, verbose=1, mode='auto')
 
-hist = model_final.fit_generator(generator= traindata, steps_per_epoch= 10, epochs= 30, validation_data= testdata, validation_steps=2, callbacks=[checkpoint,early])
+hist = model_final.fit_generator(generator= traindata, steps_per_epoch= 10, epochs= 10, validation_data= testdata, validation_steps=2, callbacks=[checkpoint,early])
 
 
 import matplotlib.pyplot as plt
@@ -184,8 +185,8 @@ if out[0][0] > out[0][1]:
 else:
     print("Formula region not found")
 
-testFilenames = getSortedFilenames()[300:]
-random.sample(testFilenames, 20)
+testFilenames = getSortedFilenames()[600:]
+testFilenames = random.sample(testFilenames, 10)
 
 for filename in testFilenames:
 
