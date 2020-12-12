@@ -35,8 +35,16 @@ ss = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
 train_images = []
 train_labels = []
 
+formulaDirectoryName = 'Modified_Handwritten_Formulas/'
+for formulaFilename in os.listdir( formulaDirectoryName ):
+    print(formulaFilename)
+    image = cv2.imread( formulaDirectoryName + formulaFilename)
+    resized = cv2.resize(image, (224, 224), interpolation = cv2.INTER_AREA)
+    train_images.append(resized)
+    train_labels.append(1)
+
 count = 0
-for filename in getSortedFilenames()[:200]:
+for filename in getSortedFilenames():
     try:
         count += 1
         print('-----------------------------')
@@ -70,14 +78,14 @@ for filename in getSortedFilenames()[:200]:
                     ious.append(iou)
                     max_loop_iou = max(max_loop_iou, iou)
 
-                if max_loop_iou > 0.25:
+                if max_loop_iou > 0.5:
                     print({ 'x1': x, 'x2': x + w, 'y1': y, 'y2': y + h }, 'is labelled!')
                     timage = imout[y: y + h, x: x + w]
                     resized = cv2.resize(timage, (224, 224), interpolation = cv2.INTER_AREA)
                     train_images.append(resized)
                     train_labels.append(1)
                     counter += 1
-                elif max_loop_iou < 0.05 and falsecounter < 20:
+                elif max_loop_iou < 0.05 and falsecounter < 30:
                     timage = imout[y: y + h, x: x + w]
                     resized = cv2.resize(timage, (224, 224), interpolation = cv2.INTER_AREA)
                     train_images.append(resized)
@@ -160,7 +168,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 checkpoint = ModelCheckpoint("ieeercnn_vgg16_1.h5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
 early = EarlyStopping(monitor='val_loss', min_delta=0, patience=100, verbose=1, mode='auto')
 
-hist = model_final.fit_generator(generator= traindata, steps_per_epoch= 10, epochs= 10, validation_data= testdata, validation_steps=2, callbacks=[checkpoint,early])
+hist = model_final.fit_generator(generator= traindata, steps_per_epoch= 10, epochs= 100, validation_data= testdata, validation_steps=2, callbacks=[checkpoint,early])
 
 
 import matplotlib.pyplot as plt
@@ -186,7 +194,7 @@ else:
     print("Formula region not found")
 
 testFilenames = getSortedFilenames()
-testFilenames = random.sample(testFilenames, 10)
+testFilenames = random.sample(testFilenames, 15)
 
 for filename in testFilenames:
 
@@ -206,7 +214,7 @@ for filename in testFilenames:
             img = np.expand_dims(resized, axis = 0)
             out = model_final.predict(img)
             print(filename, e, out[0][0])
-            if out[0][0] > 0.3:
+            if out[0][0] > 0.4:
                 print('Obtained rectangular area:', out[0][0])
                 cv2.rectangle(imout, (x, y), (x + w, y + h), (0, 255, 0), 1, cv2.LINE_AA)
     plt.clf()
