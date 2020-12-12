@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from program import getCoordinatesDictList, getSortedFilenames, getModifiedImagePath, getModifiedAnnotationsPath
+from handwritten_model_helper import getCoordinatesDictList, getSortedFilenames, getModifiedImagePath, getModifiedAnnotationsPath
 import random
 
 def get_iou(bb1, bb2):
