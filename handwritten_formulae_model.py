@@ -35,10 +35,10 @@ ss = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
 train_images = []
 train_labels = []
 
-formulaDirectoryName = 'Modified_Handwritten_Formulas/'
-for formulaFilename in os.listdir( formulaDirectoryName ):
-    print(formulaFilename)
-    image = cv2.imread( formulaDirectoryName + formulaFilename)
+FORMULA_IMAGES_DIRECTORY = 'Handwritten_Formula_Images/'
+for filename in os.listdir( FORMULA_IMAGES_DIRECTORY ):
+    print(filename)
+    image = cv2.imread( FORMULA_IMAGES_DIRECTORY + filename )
     resized = cv2.resize(image, (224, 224), interpolation = cv2.INTER_AREA)
     train_images.append(resized)
     train_labels.append(1)
