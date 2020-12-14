@@ -43,14 +43,14 @@ def getIOU(boundingBox1, boundingBox2):
         return 0.0
 
     # Calculating intersection area
-    intersection_area = (xRight - xLeft) * (yBottom - yTop)
+    intersectionArea = (xRight - xLeft) * (yBottom - yTop)
 
     # Calculating areas of the bounding boxes separately
-    bb1_area = (boundingBox1['x2'] - boundingBox1['x1']) * (boundingBox1['y2'] - boundingBox1['y1'])
-    bb2_area = (boundingBox2['x2'] - boundingBox2['x1']) * (boundingBox2['y2'] - boundingBox2['y1'])
+    boundingBox1Area = (boundingBox1['x2'] - boundingBox1['x1']) * (boundingBox1['y2'] - boundingBox1['y1'])
+    boundingBox2Area = (boundingBox2['x2'] - boundingBox2['x1']) * (boundingBox2['y2'] - boundingBox2['y1'])
 
     # Calculating IOU
-    iou = intersection_area / float(bb1_area + bb2_area - intersection_area)
+    iou = intersectionArea / float(boundingBox1Area + boundingBox2Area - intersectionArea)
 
     # Asserting IOU >= 0 and <= 1
     assert iou >= 0.0
@@ -110,7 +110,7 @@ for filename in getSortedFilenames():
         falseCounter = 0
         ious = []
 
-        # looping through all the region proposals
+        # Looping through all the region proposals
         for e, result in enumerate(regionProposals):
             maxLoopIOU = 0
             # Analyzing a max of 2000 regions
@@ -189,7 +189,7 @@ class OneHotEncoder(LabelBinarizer):
         Y = super().transform(y)
         # Binary one hot encoding
         if self.y_type_ == 'binary':
-            return np.hstack((Y, 1-Y))
+            return np.hstack((Y, 1 - Y))
         else:
             return Y
     def inverse_transform(self, Y, threshold = None):
@@ -202,8 +202,8 @@ class OneHotEncoder(LabelBinarizer):
 lenc = OneHotEncoder()
 Y = lenc.fit_transform(Y_train)
 
+# Splitting data
 X_train, X_test , Y_train, Y_test = train_test_split(X_train, Y, test_size = 0.10)
-
 print(X_train.shape, X_test.shape, Y_train.shape, Y_test.shape)
 
 # Flipping the image to generate more images in the model to make prediction better
