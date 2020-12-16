@@ -232,10 +232,20 @@ plt.savefig('chart loss.png')
 
 # Predicting 15 images randomly
 testFilenames = getSortedFilenames()
-testFilenames = random.sample(testFilenames, 15)
+testFilenames = random.sample(testFilenames, 20)
 
+DATA = []
+df = pd.DataFrame(columns= ['filename', 'confidence','TP or FP'])
+precisionList = []
+recallList = []
 # Looping through images
 for filename in testFilenames:
+
+    falseNegative = 0
+    truePositive = 0
+    falsePositive = 0
+    coordinatesDictList = getCoordinatesDictList(filename)
+    coordinatesDictInfo = [ [coordinatesDict, False]  for coordinatesDict in coordinatesDictList  ]
 
     print('---------------------------------------------')
     print('Predicting file:', filename)
@@ -266,12 +276,53 @@ for filename in testFilenames:
             print(filename, e, out[0][0])
             # If prediction value > 0.3, then it is a formula region
             if out[0][0] > 0.3:
+
+                maxIOU = 0
+                print('---------------------------')
+                for element in coordinatesDictInfo:
+                    coordinatesDict = element[0]
+                    iou = getIOU(coordinatesDict, { "x1": x, "x2": x + w, "y1": y, "y2": y + h })
+                    print('iou:', iou)
+                    if iou > 0.25:
+                        print('True')
+                        element[1] = True
+                    maxIOU = max(maxIOU, iou)
+                print('Max IOU:', maxIOU)
+                if maxIOU > 0.25:
+                    truePositive += 1
+                    DATA.append([filename, out[0][0], 'TP'])
+                elif maxIOU < 0.05:
+                    falsePositive += 1
+                    DATA.append([filename, out[0][0], 'FP'])
+                print(coordinatesDictInfo)
+
                 # Marking region bounding box in image
                 print('Obtained rectangular area:', out[0][0])
                 cv2.rectangle(imout, (x, y), (x + w, y + h), (0, 255, 0), 1, cv2.LINE_AA)
+    
+    for element in coordinatesDictInfo:
+        if element[1] == False:
+            falseNegative += 1
+
+    precision = truePositive / (truePositive + falsePositive)
+    recall = truePositive / (truePositive + falseNegative)
+    
+    print(precision, recall, truePositive, falsePositive, falseNegative)
+    precisionList.append(precision)
+    recallList.append(recall)
 
     # Saving image with the predictions marked
     plt.clf()
     plt.figure()
     plt.imshow(imout)
     plt.savefig(filename + '.jpg')
+
+df = df.append(DATA,ignore_index=True)
+df.to_csv(index=False, path_or_buf='data.csv')
+
+outputFile = open("precision_output.txt", "w")
+outputFile.write('\n'.join(map(str, precisionList)))
+outputFile.close()
+outputFile = open("recall_output.txt", "w")
+outputFile.write('\n'.join(map(str, recallList)))
+outputFile.close()
