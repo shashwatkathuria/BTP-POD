@@ -66,9 +66,9 @@ selectiveSearch = cv2.ximgproc.segmentation.createSelectiveSearchSegmentation()
 trainImages = []
 trainLabels = []
 
+print('Please wait....training in progress...')
 FORMULA_IMAGES_DIRECTORY = 'Handwritten_Formula_Images/'
 for filename in os.listdir( FORMULA_IMAGES_DIRECTORY ):
-    print(filename)
     image = cv2.imread( FORMULA_IMAGES_DIRECTORY + filename )
     resized = cv2.resize(image, (224, 224), interpolation = cv2.INTER_AREA)
     trainImages.append(resized)
@@ -82,7 +82,8 @@ for filename in getSortedFilenames():
         # Incrementing counter
         count += 1
         print('-----------------------------')
-        print(count, filename)
+        print('File: ', count, filename)
+        print('Please wait...training in progress...')
 
         # Initializing cv2 image of input image file
         image = cv2.imread(getModifiedImagePath(filename))
@@ -99,7 +100,6 @@ for filename in getSortedFilenames():
 
         # Looping through all the formula coordinates and labelling them
         for coordinateDict in coordinatesDictList:
-            print('Looping through coordinate', coordinateDict)
 
             # Copying image
             imout = image.copy()
@@ -134,7 +134,6 @@ for filename in getSortedFilenames():
 
                 # Adding to training images and labels as a formula region if IOU > 0.5
                 if maxLoopIOU > 0.5:
-                    print({ 'x1': x, 'x2': x + w, 'y1': y, 'y2': y + h }, 'proposed region is added to training labels and images!')
                     # Getting the subset of image with bounding box of the coordinates mentioned
                     timage = imout[y: y + h, x: x + w]
                     # Resizing image
@@ -156,9 +155,6 @@ for filename in getSortedFilenames():
                     trainLabels.append(0)
                     # Incrementing false counter
                     falseCounter += 1
-
-        # Printing max IOU in the loop for the input image
-        print('Max IOU:', max(ious))
 
     # Continuing if error in file
     except Exception as e:
@@ -244,11 +240,23 @@ plt.savefig('chart loss.png')
 testFilenames = getSortedFilenames()
 testFilenames = random.sample(testFilenames, 15)
 
+DATA = []
+df = pd.DataFrame(columns = ['filename', 'confidence', 'TP or FP'])
+precisionList = []
+recallList = []
+
 # Looping through images
 for filename in testFilenames:
 
+    falseNegative = 0
+    truePositive = 1
+    falsePositive = 0
+    coordinatesDictList = getCoordinatesDictList(filename)
+    coordinatesDictInfo = [ [coordinatesDict, False] for coordinatesDict in coordinatesDictList ]
+
     print('---------------------------------------------')
     print('Predicting file:', filename)
+    print('Please wait...Proposing regions and predicting ...')
 
     # Initializing cv2 image of input image file
     img = cv2.imread(getModifiedImagePath(filename))
@@ -273,15 +281,43 @@ for filename in testFilenames:
             # Predicing the region, whether or not it is a formula
             img = np.expand_dims(resized, axis = 0)
             out = finalModel.predict(img)
-            print(filename, e, out[0][0])
             # If prediction value > 0.4, then it is a formula region
             if out[0][0] > 0.4:
+                
+                maxIOU = 0
+                for element in coordinatesDictInfo:
+                    coordinatesDict = element[0]
+                    iou = getIOU(coordinatesDict, { "x1": x, "x2": x + w, "y1": y, "y2": y + h })
+
+                    if iou > 0.5:
+                        element[1] = True
+                    maxIOU = max(maxIOU, iou)
+
+                if maxIOU > 0.5:
+                    truePositive += 1
+                    DATA.append([filename, out[0][0], 'TP'])
+                elif maxIOU < 0.05:
+                    falsePositive += 1
+                    DATA.append([filename, out[0][0], 'FP'])
+
+
                 # Marking region bounding box in image
-                print('Obtained rectangular area:', out[0][0])
                 cv2.rectangle(imout, (x, y), (x + w, y + h), (0, 255, 0), 1, cv2.LINE_AA)
 
+    for element in coordinatesDictInfo:
+        if element[1] == False:
+            falseNegative +=1
+
+    precision = truePositive / (truePositive + falsePositive)
+    recall = truePositive / (truePositive + falseNegative)
+
+    precisionList.append(precision)
+    recallList.append(recall)
     # Saving image with the predictions marked
     plt.clf()
     plt.figure()
     plt.imshow(imout)
     plt.savefig(filename + '.jpg')
+
+# df = df.append(DATA, ignore_index = True)
+# df.to_csv(index = False, path_or_buf = 'data.csv')
