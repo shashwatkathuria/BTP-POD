@@ -241,7 +241,6 @@ testFilenames = getSortedFilenames()
 testFilenames = random.sample(testFilenames, 15)
 
 DATA = []
-df = pd.DataFrame(columns = ['filename', 'confidence', 'TP or FP'])
 precisionList = []
 recallList = []
 
@@ -319,5 +318,5 @@ for filename in testFilenames:
     plt.imshow(imout)
     plt.savefig(filename + '.jpg')
 
-# df = df.append(DATA, ignore_index = True)
-# df.to_csv(index = False, path_or_buf = 'data.csv')
+df = pd.DataFrame(DATA, columns = ['filename', 'confidence', 'TP or FP'])
+df.to_csv(index = False, path_or_buf = 'data.csv')
